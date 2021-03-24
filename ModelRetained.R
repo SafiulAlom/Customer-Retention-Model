@@ -10,8 +10,6 @@ dataRaw = dataRaw %>% select(-c(id, last_name))
 #summary
 summ_data = summarizeColumns(dataRaw)
 m[as.vector(sapply(m, is.numeric))] = round(m[as.vector(sapply(m, is.numeric))], 3)
-m
-
 
 #Box plot for quantitative variables
 dataRaw$retained = as.factor(ifelse(dataRaw$retained == "1", "yes", "no"))
@@ -31,7 +29,6 @@ VioPlotAll = lapply(FUN = gg.violin, X = Var_quant, dataset = dataRaw)
 ggarrange(VioPlotAll[[1]], VioPlotAll[[2]],
           VioPlotAll[[3]],VioPlotAll[[4]],
           VioPlotAll[[5]], VioPlotAll[[6]],nrow = 2, ncol = 3)
-
 
 #Bar plot for categorial variable
 gg.bar = function(dataset, variable){
@@ -55,9 +52,6 @@ corrplot(cor, type = "full", order = "hclust",
          tl.col = "black", tl.srt = 45) 
 
 
-
-
-
 #--------------------RF Model-----------------------------------#
 
 #model
@@ -73,8 +67,6 @@ task
 rf <- makeLearner("classif.randomForest", 
                   predict.type = "prob", # prediction type needs to be specified for the learner 
                   par.vals = list("replace" = TRUE, "importance" = FALSE,"nodesize"=5))
-rf
-
 
 ## Tuning
 # Hyperparameter setting
@@ -86,7 +78,6 @@ rf.parms <- makeParamSet(
   makeIntegerParam("ntree", lower = 300, upper = 1000) # Number of tree, smaller -> faster
 ) 
 
-
 # How dense should the parameters be selected from the ranges?
 tuneControl <- makeTuneControlGrid(resolution = 3, tune.threshold = FALSE)
 
@@ -97,7 +88,6 @@ rdesc <- makeResampleDesc(method = "CV", iters = 10, stratify = TRUE)
 # Start tuning with the defined options
 tuning <- tuneParams(rf, task = task, resampling = rdesc,
                      par.set = rf.parms, control = tuneControl, measures = mlr::auc)
-
 
 
 # Update the learner to the optimal hyperparameters
@@ -118,12 +108,7 @@ model_library[["rf"]] <- mlr::train(rf_tuned, task = task)
 # Calculate AUC performance on test set 
 #mlr::performance(yhat[["rf"]], measures = mlr::auc)
 
-
-
-
 #---------------------------------------------------------------------------------
-
-
 
 # Prepare the mlr task
 # Xgboost doesn't take categorical variables as input
@@ -156,7 +141,6 @@ tuneControl <- makeTuneControlRandom(maxit=100, tune.threshold = FALSE)
 # We do 3-fold cross-validation, given the small data more folds might be better
 rdesc <- makeResampleDesc(method = "RepCV", rep = 3, folds=2, stratify = TRUE)
 
-
 set.seed(123) # Set seed for the local random number generator, e.g. the CV samples
 # Tune parameters as before
 xgb.tuning <- tuneParams(xgb.learner, task = task, resampling = rdesc,
@@ -174,17 +158,13 @@ xgb.learner
 #model_library <- list()
 model_library[["xgb"]] <- mlr::train(xgb.learner, task = task)
 
-
 #--------------------------------------------------------------------------------------
-
 
 #logistic regression
 #dataRaw$retained = ifelse(dataRaw$retained == "yes", 1, 0)
 data_dummy <- mlr::createDummyFeatures(dataRaw, target="retained")
 train_data <- data_dummy[idx.train, ] # training set
 test_data <-  data_dummy[-idx.train, ] # test set (drop all observations with train indeces)
-
-
 
 # Also train gradient boosting with a better set of hyperparameters found by extensive grid search
 #xgb.learner <- setHyperPars(xgb.learner, par.vals = list("eta"=0.03,"nrounds"=300, "max_depth"=4, "verbose" = 0))
@@ -196,7 +176,6 @@ pred <- sapply(model_library, predict, newdata = test_data, simplify=FALSE)
 auc <- sapply(pred, mlr::performance, measures = mlr::auc)
 # Compare the gradient boosting performance to last week's random forest
 auc
-
 
 #boxplot of Auc
 boxplot(tuning_results$data$auc.test.mean, main = "Boxplot: AUC of parameter tuning")
